@@ -8,20 +8,15 @@ sns.set_style("darkgrid")
 st.title("💰 Finance Tracker Dashboard")
 
 # ----------------------------
-# Sample Data (replace with your own or upload)
+# Dataset inside code
 # ----------------------------
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+data = {
+    "Type": ["Income", "Expense", "Expense", "Income", "Expense", "Expense", "Income", "Expense"],
+    "Category": ["Salary", "Food", "Transport", "Freelance", "Bills", "Shopping", "Bonus", "Entertainment"],
+    "Amount": [50000, 5000, 2000, 10000, 3000, 4000, 7000, 2500]
+}
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-else:
-    # Sample fallback data
-    data = {
-        "Type": ["Income", "Expense", "Expense", "Income", "Expense"],
-        "Category": ["Salary", "Food", "Transport", "Freelance", "Bills"],
-        "Amount": [50000, 5000, 2000, 10000, 3000]
-    }
-    df = pd.DataFrame(data)
+df = pd.DataFrame(data)
 
 # ----------------------------
 # Dashboard
@@ -30,7 +25,6 @@ st.subheader("📊 Advanced Financial Dashboard")
 
 if not df.empty:
 
-    # Calculate totals
     income = df[df["Type"] == "Income"]["Amount"].sum()
     expense = df[df["Type"] == "Expense"]["Amount"].sum()
 
@@ -38,9 +32,7 @@ if not df.empty:
 
     col1, col2 = st.columns(2)
 
-    # ----------------------------
-    # Bar Chart
-    # ----------------------------
+    # 🔹 Bar Chart
     with col1:
         st.write("### Expense by Category")
 
@@ -55,9 +47,7 @@ if not df.empty:
         else:
             st.info("No expense data")
 
-    # ----------------------------
-    # Pie Chart
-    # ----------------------------
+    # 🔹 Pie Chart
     with col2:
         st.write("### Income vs Expense")
 
@@ -72,9 +62,7 @@ if not df.empty:
 
         st.pyplot(fig2)
 
-    # ----------------------------
-    # Distribution Chart
-    # ----------------------------
+    # 🔹 Distribution Chart
     st.write("### Expense Distribution")
 
     if not expense_data.empty:
@@ -89,4 +77,4 @@ if not df.empty:
         st.info("No expense data")
 
 else:
-    st.info("Add data to see advanced charts")
+    st.info("No data available")
