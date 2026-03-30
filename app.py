@@ -8,15 +8,39 @@ sns.set_style("darkgrid")
 st.title("💰 Finance Tracker Dashboard")
 
 # ----------------------------
-# Dataset inside code
+# Session state to store data
 # ----------------------------
-data = {
-    "Type": ["Income", "Expense", "Expense", "Income", "Expense", "Expense", "Income", "Expense"],
-    "Category": ["Salary", "Food", "Transport", "Freelance", "Bills", "Shopping", "Bonus", "Entertainment"],
-    "Amount": [50000, 5000, 2000, 10000, 3000, 4000, 7000, 2500]
-}
+if "data" not in st.session_state:
+    st.session_state.data = pd.DataFrame(columns=["Type", "Category", "Amount"])
 
-df = pd.DataFrame(data)
+# ----------------------------
+# Input Form
+# ----------------------------
+st.subheader("➕ Add Transaction")
+
+with st.form("entry_form"):
+    type_option = st.selectbox("Type", ["Income", "Expense"])
+    category = st.text_input("Category")
+    amount = st.number_input("Amount", min_value=0)
+
+    submit = st.form_submit_button("Add")
+
+    if submit:
+        if category and amount > 0:
+            new_data = pd.DataFrame([[type_option, category, amount]],
+                                    columns=["Type", "Category", "Amount"])
+            st.session_state.data = pd.concat([st.session_state.data, new_data], ignore_index=True)
+            st.success("Transaction added!")
+        else:
+            st.error("Please enter valid category and amount")
+
+# ----------------------------
+# Show Data
+# ----------------------------
+df = st.session_state.data
+
+st.subheader("📋 Transactions")
+st.dataframe(df)
 
 # ----------------------------
 # Dashboard
@@ -44,8 +68,6 @@ if not df.empty:
             ax1.set_title("Expenses by Category")
 
             st.pyplot(fig1)
-        else:
-            st.info("No expense data")
 
     # 🔹 Pie Chart
     with col2:
@@ -67,14 +89,9 @@ if not df.empty:
 
     if not expense_data.empty:
         fig3, ax3 = plt.subplots(figsize=(10, 5))
-
         sns.histplot(expense_data["Amount"], kde=True, ax=ax3)
-
         ax3.set_title("Expense Distribution Curve")
-
         st.pyplot(fig3)
-    else:
-        st.info("No expense data")
 
 else:
-    st.info("No data available")
+    st.info("Add transactions to see charts")
