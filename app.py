@@ -5,70 +5,60 @@ import seaborn as sns
 
 sns.set_style("darkgrid")
 
-st.set_page_config(layout="wide")
-
-st.title("📊 Interactive Finance Dashboard")
+st.title("📊 Live Finance Dashboard")
 
 # ----------------------------
-# Session state (store data)
+# Store data
 # ----------------------------
-if "df" not in st.session_state:
-    st.session_state.df = pd.DataFrame(columns=["Type", "Category", "Amount"])
+if "data" not in st.session_state:
+    st.session_state.data = []
 
 # ----------------------------
-# Input Section
+# Input
 # ----------------------------
-st.subheader("➕ Add Transaction")
+st.subheader("➕ Enter Data")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    type_val = st.selectbox("Type", ["Income", "Expense"])
+    t_type = st.selectbox("Type", ["Income", "Expense"])
 
 with col2:
-    category_val = st.text_input("Category")
+    category = st.text_input("Category")
 
 with col3:
-    amount_val = st.number_input("Amount", min_value=0)
+    amount = st.number_input("Amount", min_value=0)
 
-if st.button("Add Entry"):
-    if category_val and amount_val > 0:
-        new_row = pd.DataFrame([[type_val, category_val, amount_val]],
-                               columns=["Type", "Category", "Amount"])
-        st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
-        st.success("✅ Added successfully!")
-    else:
-        st.error("Please enter valid data")
+if st.button("Add"):
+    if category and amount > 0:
+        st.session_state.data.append({
+            "Type": t_type,
+            "Category": category,
+            "Amount": amount
+        })
+        st.success("Added!")
 
 # ----------------------------
-# Data
+# Convert to DataFrame
 # ----------------------------
-df = st.session_state.df
+df = pd.DataFrame(st.session_state.data)
 
-st.subheader("📋 Transactions Table")
+st.subheader("📋 Data")
 st.dataframe(df)
 
 # ----------------------------
-# KPIs
+# Charts (LIVE)
 # ----------------------------
 if not df.empty:
+
     income = df[df["Type"] == "Income"]["Amount"].sum()
     expense = df[df["Type"] == "Expense"]["Amount"].sum()
-    balance = income - expense
 
-    k1, k2, k3 = st.columns(3)
-    k1.metric("💰 Income", income)
-    k2.metric("💸 Expense", expense)
-    k3.metric("📊 Balance", balance)
-
-    # ----------------------------
-    # Charts
-    # ----------------------------
-    colA, colB = st.columns(2)
+    col1, col2 = st.columns(2)
 
     # 🔹 Bar Chart
-    with colA:
-        st.subheader("📊 Expense by Category")
+    with col1:
+        st.write("📊 Expense by Category")
 
         exp_df = df[df["Type"] == "Expense"]
 
@@ -82,19 +72,18 @@ if not df.empty:
             st.pyplot(fig1)
 
     # 🔹 Pie Chart
-    with colB:
-        st.subheader("🥧 Income vs Expense")
+    with col2:
+        st.write("🥧 Income vs Expense")
 
         fig2, ax2 = plt.subplots()
         ax2.pie([income, expense],
                 labels=["Income", "Expense"],
-                autopct='%1.1f%%',
-                startangle=90)
+                autopct='%1.1f%%')
 
         st.pyplot(fig2)
 
-    # 🔹 Distribution Chart
-    st.subheader("📈 Expense Distribution")
+    # 🔹 Distribution
+    st.write("📈 Expense Distribution")
 
     exp_df = df[df["Type"] == "Expense"]
 
@@ -104,4 +93,4 @@ if not df.empty:
         st.pyplot(fig3)
 
 else:
-    st.info("👉 Add transactions to see analytics")
+    st.info("👉 Please add some data to see graphs")
