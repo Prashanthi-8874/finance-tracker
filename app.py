@@ -42,20 +42,42 @@ col2.metric("Expense", f"₹{expense}")
 col3.metric("Balance", f"₹{balance}")
 
 # Chart
-st.subheader("📈 Expense Chart")
+st.subheader("📊 Advanced Financial Insights")
 
 if not df.empty:
-    expense_data = df[df["Type"] == "Expense"]
 
+    col1, col2 = st.columns(2)
+
+    # 1️⃣ Expense by Category (Bar Chart)
+    with col1:
+        st.write("### Expense by Category")
+        expense_data = df[df["Type"] == "Expense"]
+        if not expense_data.empty:
+            cat_data = expense_data.groupby("Category")["Amount"].sum()
+            fig1, ax1 = plt.subplots()
+            cat_data.plot(kind="bar", ax=ax1)
+            ax1.set_xlabel("Category")
+            ax1.set_ylabel("Amount")
+            st.pyplot(fig1)
+        else:
+            st.info("No expense data")
+
+    # 2️⃣ Income vs Expense (Pie Chart)
+    with col2:
+        st.write("### Income vs Expense")
+        labels = ["Income", "Expense"]
+        values = [income, expense]
+
+        fig2, ax2 = plt.subplots()
+        ax2.pie(values, labels=labels, autopct='%1.1f%%')
+        st.pyplot(fig2)
+
+    # 3️⃣ Category Distribution (Horizontal Bar)
+    st.write("### Category Distribution")
     if not expense_data.empty:
-        chart_data = expense_data.groupby("Category")["Amount"].sum()
+        fig3, ax3 = plt.subplots()
+        cat_data.sort_values().plot(kind="barh", ax=ax3)
+        st.pyplot(fig3)
 
-        fig, ax = plt.subplots()
-        chart_data.plot(kind="bar", ax=ax)
-        ax.set_title("Expenses by Category")
-
-        st.pyplot(fig)
-    else:
-        st.info("No expense data to show chart")
 else:
-    st.info("No data available")
+    st.info("Add some data to see insights")
