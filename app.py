@@ -6,91 +6,101 @@ import seaborn as sns
 sns.set_style("darkgrid")
 
 st.set_page_config(layout="wide")
-st.title("📊 Advanced Finance Analytics Dashboard")
+st.title("📊 Advanced Finance Dashboard")
 
 # ----------------------------
-# Internal Dataset
+# Store data in session
 # ----------------------------
-data = {
-    "Date": pd.date_range(start="2025-01-01", periods=12, freq="D"),
-    "Type": ["Income","Expense","Expense","Income","Expense","Expense","Income","Expense","Income","Expense","Expense","Income"],
-    "Category": ["Salary","Food","Transport","Freelance","Bills","Shopping","Bonus","Travel","Salary","Entertainment","Food","Bonus"],
-    "Amount": [50000,4000,2000,12000,3000,4500,8000,2500,55000,3000,3500,9000]
-}
-
-df = pd.DataFrame(data)
+if "data" not in st.session_state:
+    st.session_state.data = []
 
 # ----------------------------
-# KPIs
+# Input Section
 # ----------------------------
-income = df[df["Type"] == "Income"]["Amount"].sum()
-expense = df[df["Type"] == "Expense"]["Amount"].sum()
-balance = income - expense
+st.subheader("➕ Add Transaction")
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric("💰 Total Income", f"₹ {income}")
-col2.metric("💸 Total Expense", f"₹ {expense}")
-col3.metric("📊 Balance", f"₹ {balance}")
+with col1:
+    t_type = st.selectbox("Type", ["Income", "Expense"])
+
+with col2:
+    category = st.text_input("Category")
+
+with col3:
+    amount = st.number_input("Amount", min_value=0)
+
+if st.button("Add Transaction"):
+    if category and amount > 0:
+        st.session_state.data.append([t_type, category, amount])
+        st.success("✅ Added successfully")
+    else:
+        st.error("Please enter valid data")
 
 # ----------------------------
-# Charts Section
+# Convert to DataFrame
 # ----------------------------
-colA, colB = st.columns(2)
+df = pd.DataFrame(st.session_state.data, columns=["Type", "Category", "Amount"])
 
-# 🔹 Bar Chart
-with colA:
-    st.subheader("📊 Expense by Category")
+st.subheader("📋 Transactions")
+st.dataframe(df)
 
-    exp_df = df[df["Type"] == "Expense"]
+# ----------------------------
+# Dashboard
+# ----------------------------
+if not df.empty:
 
-    cat_data = exp_df.groupby("Category")["Amount"].sum().reset_index()
+    income = df[df["Type"] == "Income"]["Amount"].sum()
+    expense = df[df["Type"] == "Expense"]["Amount"].sum()
+    balance = income - expense
 
-    fig1, ax1 = plt.subplots(figsize=(6,4))
-    sns.barplot(data=cat_data, x="Category", y="Amount", ax=ax1)
+    # KPI Cards
+    col1, col2, col3 = st.columns(3)
+    col1.metric("💰 Income", income)
+    col2.metric("💸 Expense", expense)
+    col3.metric("📊 Balance", balance)
+
+    # Charts
+    colA, colB = st.columns(2)
+
+    # Bar Chart
+    with colA:
+        st.subheader("📊 Expense by Category")
+
+        exp_df = df[df["Type"] == "Expense"]
+
+        if not exp_df.empty:
+            cat_data = exp_df.groupby("Category")["Amount"].sum().reset_index()
+
+            fig1, ax1 = plt.subplots()
+            sns.barplot(data=cat_data, x="Category", y="Amount", ax=ax1)
+            plt.xticks(rotation=45)
+
+            st.pyplot(fig1)
+        else:
+            st.info("Add expense data to see bar chart")
+
+    # Pie Chart
+    with colB:
+        st.subheader("🥧 Income vs Expense")
+
+        if income > 0 or expense > 0:
+            fig2, ax2 = plt.subplots()
+            ax2.pie([income, expense],
+                    labels=["Income", "Expense"],
+                    autopct='%1.1f%%',
+                    startangle=90)
+            st.pyplot(fig2)
+
+    # Trend Chart
+    st.subheader("📈 Spending Trend")
+
+    fig3, ax3 = plt.subplots()
+    df_group = df.groupby("Category")["Amount"].sum().reset_index()
+    sns.lineplot(data=df_group, x="Category", y="Amount", marker="o", ax=ax3)
     plt.xticks(rotation=45)
 
-    st.pyplot(fig1)
+    st.pyplot(fig3)
 
-# 🔹 Pie Chart
-with colB:
-    st.subheader("🥧 Income vs Expense")
-
-    fig2, ax2 = plt.subplots(figsize=(5,5))
-    ax2.pie(
-        [income, expense],
-        labels=["Income", "Expense"],
-        autopct='%1.1f%%',
-        startangle=90
-    )
-
-    st.pyplot(fig2)
-
-# ----------------------------
-# Trend Chart
-# ----------------------------
-st.subheader("📈 Spending Trend Over Time")
-
-trend = df.groupby("Date")["Amount"].sum().reset_index()
-
-fig3, ax3 = plt.subplots(figsize=(10,4))
-ax3.plot(trend["Date"], trend["Amount"], marker="o")
-
-plt.xticks(rotation=45)
-st.pyplot(fig3)
-
-# ----------------------------
-# Distribution Chart
-# ----------------------------
-st.subheader("📊 Expense Distribution")
-
-fig4, ax4 = plt.subplots(figsize=(10,4))
-sns.histplot(df[df["Type"] == "Expense"]["Amount"], kde=True, ax=ax4)
-
-st.pyplot(fig4)
-
-# ----------------------------
-# Data Table
-# ----------------------------
-st.subheader("📋 Dataset")
-st.dataframe(df)
+else:
+    st.info("👉 Add transactions to see analytics")
