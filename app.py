@@ -5,93 +5,103 @@ import seaborn as sns
 
 sns.set_style("darkgrid")
 
-st.title("💰 Finance Tracker Dashboard")
+st.set_page_config(layout="wide")
+
+st.title("📊 Interactive Finance Dashboard")
 
 # ----------------------------
-# Session state to store data
+# Session state (store data)
 # ----------------------------
-if "data" not in st.session_state:
-    st.session_state.data = pd.DataFrame(columns=["Type", "Category", "Amount"])
+if "df" not in st.session_state:
+    st.session_state.df = pd.DataFrame(columns=["Type", "Category", "Amount"])
 
 # ----------------------------
-# Input Form
+# Input Section
 # ----------------------------
 st.subheader("➕ Add Transaction")
 
-with st.form("entry_form"):
-    type_option = st.selectbox("Type", ["Income", "Expense"])
-    category = st.text_input("Category")
-    amount = st.number_input("Amount", min_value=0)
+col1, col2, col3 = st.columns(3)
 
-    submit = st.form_submit_button("Add")
+with col1:
+    type_val = st.selectbox("Type", ["Income", "Expense"])
 
-    if submit:
-        if category and amount > 0:
-            new_data = pd.DataFrame([[type_option, category, amount]],
-                                    columns=["Type", "Category", "Amount"])
-            st.session_state.data = pd.concat([st.session_state.data, new_data], ignore_index=True)
-            st.success("Transaction added!")
-        else:
-            st.error("Please enter valid category and amount")
+with col2:
+    category_val = st.text_input("Category")
+
+with col3:
+    amount_val = st.number_input("Amount", min_value=0)
+
+if st.button("Add Entry"):
+    if category_val and amount_val > 0:
+        new_row = pd.DataFrame([[type_val, category_val, amount_val]],
+                               columns=["Type", "Category", "Amount"])
+        st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
+        st.success("✅ Added successfully!")
+    else:
+        st.error("Please enter valid data")
 
 # ----------------------------
-# Show Data
+# Data
 # ----------------------------
-df = st.session_state.data
+df = st.session_state.df
 
-st.subheader("📋 Transactions")
+st.subheader("📋 Transactions Table")
 st.dataframe(df)
 
 # ----------------------------
-# Dashboard
+# KPIs
 # ----------------------------
-st.subheader("📊 Advanced Financial Dashboard")
-
 if not df.empty:
-
     income = df[df["Type"] == "Income"]["Amount"].sum()
     expense = df[df["Type"] == "Expense"]["Amount"].sum()
+    balance = income - expense
 
-    expense_data = df[df["Type"] == "Expense"]
+    k1, k2, k3 = st.columns(3)
+    k1.metric("💰 Income", income)
+    k2.metric("💸 Expense", expense)
+    k3.metric("📊 Balance", balance)
 
-    col1, col2 = st.columns(2)
+    # ----------------------------
+    # Charts
+    # ----------------------------
+    colA, colB = st.columns(2)
 
     # 🔹 Bar Chart
-    with col1:
-        st.write("### Expense by Category")
+    with colA:
+        st.subheader("📊 Expense by Category")
 
-        if not expense_data.empty:
-            cat_data = expense_data.groupby("Category")["Amount"].sum().reset_index()
+        exp_df = df[df["Type"] == "Expense"]
 
-            fig1, ax1 = plt.subplots(figsize=(8, 5))
+        if not exp_df.empty:
+            cat_data = exp_df.groupby("Category")["Amount"].sum().reset_index()
+
+            fig1, ax1 = plt.subplots()
             sns.barplot(data=cat_data, x="Category", y="Amount", ax=ax1)
-            ax1.set_title("Expenses by Category")
+            plt.xticks(rotation=45)
 
             st.pyplot(fig1)
 
     # 🔹 Pie Chart
-    with col2:
-        st.write("### Income vs Expense")
+    with colB:
+        st.subheader("🥧 Income vs Expense")
 
-        fig2, ax2 = plt.subplots(figsize=(6, 6))
-        ax2.pie(
-            [income, expense],
-            labels=["Income", "Expense"],
-            autopct='%1.1f%%',
-            startangle=90
-        )
-        ax2.set_title("Income vs Expense")
+        fig2, ax2 = plt.subplots()
+        ax2.pie([income, expense],
+                labels=["Income", "Expense"],
+                autopct='%1.1f%%',
+                startangle=90)
 
         st.pyplot(fig2)
 
     # 🔹 Distribution Chart
-    st.write("### Expense Distribution")
+    st.subheader("📈 Expense Distribution")
 
-    if not expense_data.empty:
-        fig3, ax3 = plt.subplots(figsize=(10, 5))
-        sns.histplot(expense_data["Amount"], kde=True, ax=ax3)
-        ax3.set_title("Expense Distribution Curve")
+    exp_df = df[df["Type"] == "Expense"]
+
+    if not exp_df.empty:
+        fig3, ax3 = plt.subplots()
+        sns.histplot(exp_df["Amount"], kde=True, ax=ax3)
         st.pyplot(fig3)
 
 else:
-    st.info("Add transactions to see charts")
+    st.info("👉 Add transactions to see analytics")
