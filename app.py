@@ -10,14 +10,16 @@ st.title("💰 Personal Finance Tracker")
 if "data" not in st.session_state:
     st.session_state.data = pd.DataFrame(columns=["Type", "Category", "Amount"])
 
-# Sidebar input
 st.sidebar.header("Add Transaction")
 
-type_ = st.sidebar.selectbox("Type", ["Income", "Expense"])
-category = st.sidebar.text_input("Category")
-amount = st.sidebar.number_input("Amount", min_value=0)
+with st.sidebar.form("form"):
+    type_ = st.selectbox("Type", ["Income", "Expense"])
+    category = st.text_input("Category")
+    amount = st.number_input("Amount", min_value=0)
 
-if st.sidebar.button("Add"):
+    submit = st.form_submit_button("Add")
+
+if submit:
     new_data = pd.DataFrame([[type_, category, amount]],
                             columns=["Type", "Category", "Amount"])
     st.session_state.data = pd.concat([st.session_state.data, new_data], ignore_index=True)
