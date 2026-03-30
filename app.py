@@ -1,85 +1,52 @@
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_style("darkgrid")
 
-st.set_page_config(page_title="Finance Tracker", layout="wide")
-
-st.title("💰 Personal Finance Tracker")
-
-# Session state
-if "data" not in st.session_state:
-    st.session_state.data = pd.DataFrame(columns=["Type", "Category", "Amount"])
-
-# ===== SIDEBAR FORM (FIXED) =====
-st.sidebar.header("Add Transaction")
-
-with st.sidebar.form("form", clear_on_submit=True):
-    type_ = st.selectbox("Type", ["Income", "Expense"])
-    category = st.text_input("Category")
-    amount = st.number_input("Amount", min_value=0)
-
-    submit = st.form_submit_button("Add Transaction")
-
-# Add data
-if submit:
-    if category != "" and amount > 0:
-        new_data = pd.DataFrame([[type_, category, amount]],
-                                columns=["Type", "Category", "Amount"])
-        st.session_state.data = pd.concat([st.session_state.data, new_data], ignore_index=True)
-        st.success("Transaction Added!")
-    else:
-        st.warning("Enter valid details")
-
-df = st.session_state.data
-
-# ===== SHOW DATA =====
-st.subheader("📋 Transactions")
-st.dataframe(df)
-
-# ===== SUMMARY =====
-income = df[df["Type"] == "Income"]["Amount"].sum()
-expense = df[df["Type"] == "Expense"]["Amount"].sum()
-balance = income - expense
-
-st.subheader("📊 Summary")
-col1, col2, col3 = st.columns(3)
-col1.metric("Income", f"₹{income}")
-col2.metric("Expense", f"₹{expense}")
-col3.metric("Balance", f"₹{balance}")
-
-# ===== ADVANCED GRAPHS =====
-st.subheader("📈 Financial Insights")
+st.subheader("📊 Advanced Financial Dashboard")
 
 if not df.empty:
 
+    expense_data = df[df["Type"] == "Expense"]
+
     col1, col2 = st.columns(2)
 
-    # Bar Chart
+    # 🔹 BIG BAR CHART
     with col1:
         st.write("### Expense by Category")
-        expense_data = df[df["Type"] == "Expense"]
-
         if not expense_data.empty:
-            cat_data = expense_data.groupby("Category")["Amount"].sum()
-            fig1, ax1 = plt.subplots()
-            cat_data.plot(kind="bar", ax=ax1)
+            cat_data = expense_data.groupby("Category")["Amount"].sum().reset_index()
+
+            fig1, ax1 = plt.subplots(figsize=(8,5))
+            sns.barplot(data=cat_data, x="Category", y="Amount", ax=ax1)
+            ax1.set_title("Expenses by Category", fontsize=14)
+
             st.pyplot(fig1)
         else:
             st.info("No expense data")
 
-    # Pie Chart
+    # 🔹 BIG PIE CHART
     with col2:
         st.write("### Income vs Expense")
-        fig2, ax2 = plt.subplots()
-        ax2.pie([income, expense], labels=["Income", "Expense"], autopct='%1.1f%%')
+
+        fig2, ax2 = plt.subplots(figsize=(6,6))
+        ax2.pie([income, expense],
+                labels=["Income", "Expense"],
+                autopct='%1.1f%%',
+                startangle=90)
+        ax2.set_title("Income vs Expense")
+
         st.pyplot(fig2)
 
-    # Horizontal Chart
-    st.write("### Category Distribution")
+    # 🔹 DISTRIBUTION GRAPH (LIKE YOUR IMAGE STYLE)
+    st.write("### Expense Distribution")
+
     if not expense_data.empty:
-        fig3, ax3 = plt.subplots()
-        cat_data.sort_values().plot(kind="barh", ax=ax3)
+        fig3, ax3 = plt.subplots(figsize=(10,5))
+
+        sns.histplot(expense_data["Amount"], kde=True, ax=ax3)
+
+        ax3.set_title("Expense Distribution Curve")
+
         st.pyplot(fig3)
 
 else:
-    st.info("Add some data to see graphs")
+    st.info("Add data to see advanced charts")
